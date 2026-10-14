@@ -1,0 +1,21 @@
+{
+  "name": "wortjagd",
+  "version": "1.2.0",
+  "private": true,
+  "description": "Wortjagd – német szókincs- és nyelvtangyakorló Android app (Capacitor)",
+  "scripts": {
+    "copy-libs": "node scripts/copy-libs.js",
+    "android:add": "npx cap add android",
+    "android:sync": "node scripts/copy-libs.js && npx cap sync android",
+    "android:open": "npx cap open android"
+  },
+  "dependencies": {
+    "@capacitor/android": "6.1.2",
+    "@capacitor/app": "6.0.1",
+    "@capacitor/core": "6.1.2",
+    "xlsx": "0.18.5"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "6.1.2"
+  }
+}

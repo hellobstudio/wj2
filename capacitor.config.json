@@ -1,0 +1,13 @@
+{
+  "appId": "hu.wortjagd.app",
+  "appName": "Wortjagd",
+  "webDir": "www",
+  "android": {
+    "backgroundColor": "#14233B"
+  },
+  "plugins": {
+    "CapacitorHttp": {
+      "enabled": true
+    }
+  }
+}
