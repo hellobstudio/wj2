@@ -1,0 +1,80 @@
+name: Android APK
+
+on:
+  push:
+    branches: [ main, master ]
+    tags: [ 'v*' ]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+
+      - name: Copy web libraries
+        run: node scripts/copy-libs.js
+
+      - name: Create Android project
+        run: npx cap add android
+
+      - name: App icon and splash screen
+        continue-on-error: true
+        run: >
+          npx --yes @capacitor/assets@3.0.5 generate --android
+          --iconBackgroundColor '#14233B' --iconBackgroundColorDark '#14233B'
+          --splashBackgroundColor '#14233B' --splashBackgroundColorDark '#14233B'
+
+      - name: Sync web code into the Android project
+        run: npx cap sync android
+
+      - name: Set app version
+        run: |
+          VER=$(node -p "require('./package.json').version")
+          sed -E -i "s/versionCode [0-9]+/versionCode ${{ github.run_number }}/; s/versionName \"[^\"]*\"/versionName \"$VER\"/" android/app/build.gradle
+          grep -E "versionCode|versionName" android/app/build.gradle
+
+      - name: Use the project's fixed signing key
+        run: mkdir -p ~/.android && cp signing/debug.keystore ~/.android/debug.keystore
+
+      - name: Build APK
+        working-directory: android
+        run: |
+          chmod +x gradlew
+          ./gradlew assembleDebug --no-daemon
+
+      - name: Rename APK
+        run: |
+          VER=$(node -p "require('./package.json').version")
+          mkdir -p dist
+          cp android/app/build/outputs/apk/debug/app-debug.apk "dist/wortjagd-$VER.apk"
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: wortjagd-apk
+          path: dist/*.apk
+
+      - name: Publish release (only for v* tags)
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/*.apk
